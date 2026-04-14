@@ -1,4 +1,4 @@
-const CACHE_NAME = 'race-timer-v1';
+const CACHE_NAME = 'race-timer-v2';
 const ASSETS = ['./', 'index.html', 'app.js', 'manifest.json'];
 
 self.addEventListener('install', (e) => {

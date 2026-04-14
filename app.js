@@ -1,8 +1,17 @@
 // ── Event Configuration ──
 const EVENTS = {
-  '800m':  { laps: 2 },
-  '1600m': { laps: 4 },
+  '800m':         { laps: 2, relay: false },
+  '1600m':        { laps: 4, relay: false },
+  '4x400m Relay': { laps: 4, relay: true },
 };
+
+function isRelay(event) {
+  return !!(EVENTS[event] && EVENTS[event].relay);
+}
+
+function splitLabel(event, n) {
+  return isRelay(event) ? `Leg ${n}` : `L${n}`;
+}
 
 const LANE_COLORS = ['#4ecca3', '#e9a045', '#45a0e9'];
 
@@ -198,12 +207,18 @@ meetInput.addEventListener('input', () => {
 });
 
 // ── Event Toggle ──
+function updateRosterLabel() {
+  const labelEl = document.getElementById('rosterLabelText');
+  if (labelEl) labelEl.textContent = isRelay(selectedEvent) ? 'Select teams' : 'Select runners';
+}
+
 document.getElementById('eventToggle').addEventListener('click', (e) => {
   const btn = e.target.closest('button');
   if (!btn || !btn.dataset.event) return;
   selectedEvent = btn.dataset.event;
   document.querySelectorAll('#eventToggle button').forEach(b => b.classList.remove('selected'));
   btn.classList.add('selected');
+  updateRosterLabel();
 });
 
 // ── Athlete Selection Grid ──
@@ -404,7 +419,8 @@ function renderRunnerBtnContent(entry, index) {
   }
 
   const nextLap = lapCount + 1;
-  const lapLabel = nextLap >= lapsRequired ? 'FINISH' : `L${nextLap}/${lapsRequired}`;
+  const unit = isRelay(activeRace.event) ? 'Leg' : 'L';
+  const lapLabel = nextLap >= lapsRequired ? 'FINISH' : `${unit}${unit === 'Leg' ? ' ' : ''}${nextLap}/${lapsRequired}`;
 
   return `
     <div class="runner-btn-top">
@@ -647,7 +663,7 @@ function renderReview() {
     const prDiffHtml = prDiff ? `<span class="pr-diff ${prDiff.improved ? 'improved' : ''}">${prDiff.text}</span>` : '';
 
     const splitsHtml = entry.laps.map((l, i) =>
-      `<span class="review-split-chip">L${i + 1}: ${formatTime(l.splitMs)}</span>`
+      `<span class="review-split-chip">${splitLabel(activeRace.event, i + 1)}: ${formatTime(l.splitMs)}</span>`
     ).join('');
 
     return `
@@ -739,7 +755,7 @@ function buildRaceShareText(race) {
       text += `\n\nDNF ${entry.athleteName}`;
     }
     if (entry.laps.length > 0) {
-      const splits = entry.laps.map((l, i) => `L${i + 1} ${formatTime(l.splitMs)}`).join(' | ');
+      const splits = entry.laps.map((l, i) => `${splitLabel(race.event, i + 1)} ${formatTime(l.splitMs)}`).join(' | ');
       text += `\n  ${splits}`;
     }
   }
@@ -899,7 +915,7 @@ function renderRaceCard(race, highlightAthleteId) {
     const prDiffHtml = prDiff ? `<span class="pr-diff ${prDiff.improved ? 'improved' : ''}">${prDiff.text}</span>` : '';
 
     const splitsHtml = entry.laps.map((l, i) =>
-      `<span class="entry-split-chip">L${i + 1}: ${formatTime(l.splitMs)}</span>`
+      `<span class="entry-split-chip">${splitLabel(race.event, i + 1)}: ${formatTime(l.splitMs)}</span>`
     ).join('');
 
     const isHighlighted = highlightAthleteId && highlightAthleteId !== 'all' && entry.athleteId === highlightAthleteId;
