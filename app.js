@@ -152,6 +152,55 @@ function hapticTap() {
   if (navigator.vibrate) navigator.vibrate(40);
 }
 
+// ── Sound ──
+// Synthesized via Web Audio API -- no external files, works offline.
+// AudioContext must be created/resumed from a user gesture, which is always
+// the case here (first sound fires from the Start button click).
+let audioCtx = null;
+function ensureAudioCtx() {
+  if (!audioCtx) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    audioCtx = new AC();
+  }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+function playTone(freq, startOffset, dur, peakGain) {
+  const ctx = audioCtx;
+  const t = ctx.currentTime + startOffset;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(freq, t);
+  gain.gain.setValueAtTime(0.0001, t);
+  gain.gain.exponentialRampToValueAtTime(peakGain, t + 0.012);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  osc.connect(gain).connect(ctx.destination);
+  osc.start(t);
+  osc.stop(t + dur + 0.02);
+}
+
+// Short single ding: start and each lap tap.
+function playDing() {
+  try {
+    if (!ensureAudioCtx()) return;
+    playTone(880, 0, 0.3, 0.3);
+  } catch { /* non-critical */ }
+}
+
+// Two-note descending chime for race completion. Starts on the lap-ding
+// pitch (880 Hz) and drops a major third down to 660 Hz so the runner
+// clearly hears that the race is over, not just another lap.
+function playFinishChime() {
+  try {
+    if (!ensureAudioCtx()) return;
+    playTone(880, 0,    0.35, 0.35);
+    playTone(660, 0.18, 0.55, 0.35);
+  } catch { /* non-critical */ }
+}
+
 // ── Wake Lock ──
 let wakeLock = null;
 async function requestWakeLock() {
@@ -301,6 +350,7 @@ function setTabsDisabled(disabled) {
 startBtn.addEventListener('click', () => {
   if (selectedAthleteIds.length === 0) return;
   hapticTap();
+  playDing();
 
   const lapsRequired = EVENTS[selectedEvent].laps;
   activeRace = {
@@ -519,6 +569,7 @@ function doRunnerTap(index) {
   entry.lastTapTime = now;
 
   hapticTap();
+  playDing();
 
   const elapsed = performance.now() - raceStartTime;
   const split = elapsed - entry.lastLapTime;
@@ -602,6 +653,7 @@ function doDNF(index) {
 function checkRaceComplete() {
   const allDone = activeRace.entries.every(e => e.status === 'finished' || e.status === 'dnf');
   if (allDone) {
+    playFinishChime();
     stopMasterClock();
     transitionToReview();
   }
@@ -610,6 +662,7 @@ function checkRaceComplete() {
 // ── End Race (manual) ──
 endRaceBtn.addEventListener('click', () => {
   if (!confirm('End race? Active runners will be marked DNF.')) return;
+  playFinishChime();
   // Mark remaining active runners as DNF
   activeRace.entries.forEach(entry => {
     if (entry.status === 'active') {
