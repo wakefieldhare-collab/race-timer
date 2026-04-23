@@ -13,8 +13,8 @@ function splitLabel(event, n) {
   return isRelay(event) ? `Leg ${n}` : `L${n}`;
 }
 
-const LANE_COLORS = ['#4ecca3', '#e9a045', '#45a0e9', '#d96bd3'];
-const MAX_RUNNERS = 4;
+const LANE_COLORS = ['#4ecca3', '#e9a045', '#45a0e9', '#d96bd3', '#e9d045', '#7a45e9'];
+const MAX_RUNNERS = 6;
 
 // ── Data Layer ──
 const API_BASE = 'https://gtf-desktop.tail98708b.ts.net:3457';
