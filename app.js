@@ -13,7 +13,8 @@ function splitLabel(event, n) {
   return isRelay(event) ? `Leg ${n}` : `L${n}`;
 }
 
-const LANE_COLORS = ['#4ecca3', '#e9a045', '#45a0e9'];
+const LANE_COLORS = ['#4ecca3', '#e9a045', '#45a0e9', '#d96bd3'];
+const MAX_RUNNERS = 4;
 
 // ── Data Layer ──
 const API_BASE = 'https://gtf-desktop.tail98708b.ts.net:3457';
@@ -281,7 +282,7 @@ function renderAthleteGrid() {
     const selIndex = selectedAthleteIds.indexOf(ath.id);
     const isSelected = selIndex !== -1;
     const color = isSelected ? LANE_COLORS[selIndex] : '#0f3460';
-    const atMax = selectedAthleteIds.length >= 3 && !isSelected;
+    const atMax = selectedAthleteIds.length >= MAX_RUNNERS && !isSelected;
     const cls = 'athlete-chip' + (isSelected ? ' selected' : '') + (atMax ? ' disabled' : '');
     return `<div class="${cls}" data-id="${ath.id}" style="--lane-color: ${color}">${ath.name}</div>`;
   }).join('');
@@ -299,7 +300,7 @@ function toggleAthleteSelection(athleteId) {
   if (idx !== -1) {
     selectedAthleteIds.splice(idx, 1);
   } else {
-    if (selectedAthleteIds.length >= 3) return;
+    if (selectedAthleteIds.length >= MAX_RUNNERS) return;
     selectedAthleteIds.push(athleteId);
   }
   renderAthleteGrid();
@@ -307,8 +308,8 @@ function toggleAthleteSelection(athleteId) {
 
 function updateSelectionCounter() {
   const count = selectedAthleteIds.length;
-  selectionCounter.textContent = `(${count}/3)`;
-  selectionCounter.className = 'selection-counter' + (count >= 3 ? ' full' : '');
+  selectionCounter.textContent = `(${count}/${MAX_RUNNERS})`;
+  selectionCounter.className = 'selection-counter' + (count >= MAX_RUNNERS ? ' full' : '');
 }
 
 function updateStartButton() {
